@@ -12,9 +12,11 @@ import (
 )
 
 var redditPostPattern *regexp.Regexp
+var discordToken string
 
 func init() {
 	redditPostPattern = regexp.MustCompile(`https:\/\/www.reddit.com\/r\/(.+)\/comments\/(.+)\/.+`)
+	discordToken = os.Getenv("DISCORD_TOKEN")
 }
 
 func main() {

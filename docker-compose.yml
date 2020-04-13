@@ -1,0 +1,9 @@
+version: "3.7"
+
+services:
+  reddit-bot:
+    build: "."
+    container_name: "reddit-bot"
+    restart: "unless-stopped"
+    environment:
+        DISCORD_TOKEN: ""
