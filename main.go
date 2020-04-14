@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -58,7 +59,7 @@ func onMessage(s *discord.Session, m *discord.MessageCreate) {
 	s.ChannelMessageSendEmbed(m.ChannelID, &discord.MessageEmbed{
 		Title: redditPost.title,
 		Color: 16728833,
-		URL:   m.Content,
+		URL:   fmt.Sprintf("https://reddit.com%s", redditPost.permalink),
 		Author: &discord.MessageEmbedAuthor{
 			Name:    m.Author.Username,
 			IconURL: m.Author.AvatarURL(""),
@@ -66,6 +67,6 @@ func onMessage(s *discord.Session, m *discord.MessageCreate) {
 		Image: &discord.MessageEmbedImage{
 			URL: redditPost.imageURL,
 		},
-		Description: redditPost.subreddit,
+		Description: fmt.Sprintf("%s by u/%s", redditPost.subreddit, redditPost.author),
 	})
 }

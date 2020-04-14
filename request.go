@@ -15,6 +15,8 @@ type RedditPostJSON []struct {
 			Data struct {
 				Title     string `json:"title"`
 				Subreddit string `json:"subreddit_name_prefixed"`
+				Author    string `json:"author"`
+				Permalink string `json:"permalink"`
 				URL       string `json:"url"`
 			} `json:"data"`
 		} `json:"children"`
@@ -24,6 +26,8 @@ type RedditPostJSON []struct {
 type redditPost struct {
 	title     string
 	subreddit string
+	author    string
+	permalink string
 	imageURL  string
 }
 
@@ -59,6 +63,8 @@ func getPostData(postID string) (*redditPost, error) {
 	return &redditPost{
 		title:     redditPostJSON[0].Data.Children[0].Data.Title,
 		subreddit: redditPostJSON[0].Data.Children[0].Data.Subreddit,
+		author:    redditPostJSON[0].Data.Children[0].Data.Author,
+		permalink: redditPostJSON[0].Data.Children[0].Data.Permalink,
 		imageURL:  redditPostJSON[0].Data.Children[0].Data.URL,
 	}, nil
 }
