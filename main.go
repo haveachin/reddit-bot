@@ -16,7 +16,10 @@ var redditPostPattern *regexp.Regexp
 var discordToken string
 
 func init() {
-	redditPostPattern = regexp.MustCompile(`https:\/\/www.reddit.com\/r\/(.+)\/comments\/(.+?)\/.+`)
+	// prefix - msg before link; subreddit - subreddit of post;
+	// post - ID of post; suffix - msg after link;
+	redditPostPattern = regexp.MustCompile(`(?s)(?P<prefix>.*)https:\/\/(?:www.)?reddit.com
+		\/r\/(?P<subreddit>.+)\/comments\/(?P<post>.+?)\/[^\s\n]*\s?(?P<suffix>.*)`)
 	discordToken = os.Getenv("DISCORD_TOKEN")
 }
 
@@ -43,12 +46,12 @@ func onMessage(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	matches := redditPostPattern.FindStringSubmatch(m.Content)
-	if len(matches) < 3 {
+	matches, err := FindStringSubmatch(redditPostPattern, m.Content)
+	if err != nil {
 		return
 	}
 
-	redditPost, err := getPostData(matches[2])
+	redditPost, err := getPostData(matches.CaptureByName("post"))
 	if err != nil {
 		s.MessageReactionAdd(m.ChannelID, m.ID, "⚠️")
 		log.Println(err)
