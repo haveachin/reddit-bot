@@ -8,23 +8,41 @@ import (
 	"regexp"
 	"syscall"
 
-	"github.com/bwmarrin/discordgo"
 	discord "github.com/bwmarrin/discordgo"
 )
 
-var redditPostPattern *regexp.Regexp
-var discordToken string
+const (
+	captureNamePrefix        string = "prefix"
+	captureNameSubreddit     string = "subreddit"
+	captureNamePostID        string = "postID"
+	captureNameSuffix        string = "suffix"
+	redditPostPatternStringf string = `(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/comments\/(?P<%s>.+?)\/[^\s\n]*\s?(?P<%s>.*)`
+	discordTokenEnv          string = "DISCORD_TOKEN"
+)
+
+var (
+	redditPostPattern *regexp.Regexp
+	discordToken      string
+)
 
 func init() {
 	// prefix - msg before link; subreddit - subreddit of post;
 	// post - ID of post; suffix - msg after link;
-	redditPostPattern = regexp.MustCompile(`(?s)(?P<prefix>.*)https:\/\/(?:www.)?reddit.com
-		\/r\/(?P<subreddit>.+)\/comments\/(?P<post>.+?)\/[^\s\n]*\s?(?P<suffix>.*)`)
-	discordToken = os.Getenv("DISCORD_TOKEN")
+	redditPostPattern = regexp.MustCompile(
+		fmt.Sprintf(
+			redditPostPatternStringf,
+			captureNamePrefix,
+			captureNameSubreddit,
+			captureNamePostID,
+			captureNameSuffix,
+		),
+	)
+
+	discordToken = os.Getenv(discordTokenEnv)
 }
 
 func main() {
-	discordSession, err := discordgo.New("Bot " + discordToken)
+	discordSession, err := discord.New("Bot " + discordToken)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,28 +66,37 @@ func onMessage(s *discord.Session, m *discord.MessageCreate) {
 
 	matches, err := FindStringSubmatch(redditPostPattern, m.Content)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 
-	redditPost, err := getPostData(matches.CaptureByName("post"))
+	redditPost, err := getPostData(matches.CaptureByName(captureNamePostID))
 	if err != nil {
 		s.MessageReactionAdd(m.ChannelID, m.ID, "⚠️")
 		log.Println(err)
 		return
 	}
 
-	s.ChannelMessageDelete(m.ChannelID, m.ID)
-	s.ChannelMessageSendEmbed(m.ChannelID, &discord.MessageEmbed{
-		Title: redditPost.title,
-		Color: 16728833,
-		URL:   fmt.Sprintf("https://reddit.com%s", redditPost.permalink),
-		Author: &discord.MessageEmbedAuthor{
-			Name:    m.Author.Username,
-			IconURL: m.Author.AvatarURL(""),
+	_, err = s.ChannelMessageSendComplex(m.ChannelID, &discord.MessageSend{
+		Content: fmt.Sprintf("%s%s", matches.CaptureByName(captureNamePrefix), matches.CaptureByName(captureNameSuffix)),
+		Embed: &discord.MessageEmbed{
+			Title: redditPost.title,
+			Color: 16728833,
+			URL:   fmt.Sprintf("https://reddit.com%s", redditPost.permalink),
+			Author: &discord.MessageEmbedAuthor{
+				Name:    m.Author.Username,
+				IconURL: m.Author.AvatarURL(""),
+			},
+			Image: &discord.MessageEmbedImage{
+				URL: redditPost.imageURL,
+			},
+			Description: fmt.Sprintf("%s by u/%s", redditPost.subreddit, redditPost.author),
 		},
-		Image: &discord.MessageEmbedImage{
-			URL: redditPost.imageURL,
-		},
-		Description: fmt.Sprintf("%s by u/%s", redditPost.subreddit, redditPost.author),
 	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	s.ChannelMessageDelete(m.ChannelID, m.ID)
 }
