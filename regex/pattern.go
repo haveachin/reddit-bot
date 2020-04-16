@@ -35,7 +35,7 @@ func MustCompile(pattern string, names ...string) Pattern {
 // but returns an error if s can't be matched against the pattern p
 func (p *Pattern) FindStringSubmatch(s string) (Match, error) {
 	if !p.regex.MatchString(s) {
-		return Match{}, fmt.Errorf(ErrNoMatch.Error(), s)
+		return Match{}, fmt.Errorf("no matches found in provided string s: %s", s)
 	}
 
 	return Match{p, p.regex.FindStringSubmatch(s)}, nil
