@@ -18,7 +18,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	matches, err := FindStringSubmatch(redditPostPattern, m.Content)
+	matches, err := redditPostPattern.FindStringSubmatch(m.Content)
 	if err != nil {
 		return
 	}

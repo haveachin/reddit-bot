@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"regexp"
 	"syscall"
 
 	discord "github.com/bwmarrin/discordgo"
+	"github.com/haveachin/reddit-bot/regex"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -18,16 +18,20 @@ const (
 )
 
 const (
+	pattern              string = `(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/comments\/(?P<%s>.+?)\/[^\s\n]*\s?(?P<%s>.*)`
 	captureNamePrefixMsg string = "prefix"
 	captureNameSubreddit string = "subreddit"
 	captureNamePostID    string = "postID"
 	captureNameSuffixMsg string = "suffix"
-	discordBotTokenf     string = "Bot %s"
-	discordTokenEnvKey   string = "DISCORD_TOKEN"
+)
+
+const (
+	discordBotTokenf   string = "Bot %s"
+	discordTokenEnvKey string = "DISCORD_TOKEN"
 )
 
 var (
-	redditPostPattern *regexp.Regexp
+	redditPostPattern regex.Pattern
 	discordToken      string
 )
 
@@ -35,14 +39,12 @@ func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
-	redditPostPattern = regexp.MustCompile(
-		fmt.Sprintf(
-			`(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/comments\/(?P<%s>.+?)\/[^\s\n]*\s?(?P<%s>.*)`,
-			captureNamePrefixMsg,
-			captureNameSubreddit,
-			captureNamePostID,
-			captureNameSuffixMsg,
-		),
+	redditPostPattern = regex.MustCompile(
+		pattern,
+		captureNamePrefixMsg,
+		captureNameSubreddit,
+		captureNamePostID,
+		captureNameSuffixMsg,
 	)
 
 	discordToken = fmt.Sprintf(discordBotTokenf, os.Getenv(discordTokenEnvKey))
