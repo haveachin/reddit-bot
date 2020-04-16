@@ -27,5 +27,5 @@ func (m *Match) CaptureByName(name string) string {
 			return group
 		}
 	}
-	panic(fmt.Errorf("no capture group with the provided alias name '%s' could be found", name))
+	panic(fmt.Errorf("regex: no capture group with the provided alias name '%s' could be found", name))
 }
