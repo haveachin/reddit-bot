@@ -17,11 +17,6 @@ func init() {
 type headerTransport struct{}
 
 func (ht *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	const (
-		headerKeyUserAgent   string = "User-Agent"
-		headerValueUserAgent string = "Haveachins-Reddit-Bot"
-	)
-
-	req.Header.Add(headerKeyUserAgent, headerValueUserAgent)
+	req.Header.Add("User-Agent", "RedditBot (https://github.com/haveachin/reddit-bot)")
 	return http.DefaultTransport.RoundTrip(req)
 }

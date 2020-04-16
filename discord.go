@@ -30,12 +30,13 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	content := fmt.Sprintf("%s%s", matches.CaptureByName(captureNamePrefixMsg), matches.CaptureByName(captureNameSuffixMsg))
+	prefixMsg := matches.CaptureByName(captureNamePrefixMsg)
+	suffixMsg := matches.CaptureByName(captureNameSuffixMsg)
 	permalink := fmt.Sprintf("https://reddit.com%s", post.Permalink)
 	description := fmt.Sprintf("%s by u/%s", post.Subreddit, post.Author)
 
 	messageSend := &discord.MessageSend{
-		Content: content,
+		Content: prefixMsg + suffixMsg,
 		Embed: &discord.MessageEmbed{
 			Title: post.Title,
 			Color: colorReddit,
