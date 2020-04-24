@@ -18,6 +18,10 @@ type Post struct {
 	Permalink string
 	// ImageURL is the URL to the image form the post
 	ImageURL string
+	// VideoURL is the URL to the video from the post
+	VideoURL string
+	// IsVideo determents if the post is a video or an image
+	IsVideo bool
 }
 
 type postJSON []struct {
@@ -29,6 +33,12 @@ type postJSON []struct {
 				Author    string `json:"author"`
 				Permalink string `json:"permalink"`
 				URL       string `json:"url"`
+				IsVideo   bool   `json:"is_video"`
+				Media     struct {
+					Video struct {
+						URL string `json:"dash_url"`
+					} `json:"reddit_video"`
+				} `json:"media"`
 			} `json:"data"`
 		} `json:"children"`
 	} `json:"data"`
@@ -69,5 +79,7 @@ func PostByID(postID string) (Post, error) {
 		Author:    postJSON[0].Data.Children[0].Data.Author,
 		Permalink: postJSON[0].Data.Children[0].Data.Permalink,
 		ImageURL:  postJSON[0].Data.Children[0].Data.URL,
+		VideoURL:  postJSON[0].Data.Children[0].Data.Media.Video.URL,
+		IsVideo:   postJSON[0].Data.Children[0].Data.IsVideo,
 	}, nil
 }

@@ -45,11 +45,21 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 				Name:    m.Author.Username,
 				IconURL: m.Author.AvatarURL(""),
 			},
-			Image: &discord.MessageEmbedImage{
-				URL: post.ImageURL,
-			},
 			Description: description,
 		},
+	}
+
+	if post.IsVideo {
+		messageSend.Embed.Video = &discord.MessageEmbedVideo{
+			URL: post.VideoURL,
+		}
+		messageSend.Embed.Footer = &discord.MessageEmbedFooter{
+			Text: "Watch the video on Reddit",
+		}
+	} else {
+		messageSend.Embed.Image = &discord.MessageEmbedImage{
+			URL: post.ImageURL,
+		}
 	}
 
 	_, err = s.ChannelMessageSendComplex(m.ChannelID, messageSend)
