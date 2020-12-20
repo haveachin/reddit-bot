@@ -47,7 +47,12 @@ func init() {
 		captureNameSuffixMsg,
 	)
 
-	discordToken = fmt.Sprintf(discordBotTokenf, os.Getenv(discordTokenEnvKey))
+	cfg, err := loadConfig()
+	if err != nil {
+		log.Err(err)
+	}
+
+	discordToken = fmt.Sprintf(discordBotTokenf, cfg.DiscordToken)
 }
 
 func main() {
