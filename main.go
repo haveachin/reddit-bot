@@ -13,11 +13,6 @@ import (
 )
 
 const (
-	msgStartingBot string = "Loading all resources"
-	msgBotIsOnline string = "Bot is now online"
-)
-
-const (
 	pattern              string = `(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/comments\/(?P<%s>.+?)\/[^\s\n]*\s?(?P<%s>.*)`
 	captureNamePrefixMsg string = "prefix"
 	captureNameSubreddit string = "subreddit"
@@ -26,8 +21,7 @@ const (
 )
 
 const (
-	discordBotTokenf   string = "Bot %s"
-	discordTokenEnvKey string = "DISCORD_TOKEN"
+	discordBotTokenFormat string = "Bot %s"
 )
 
 var (
@@ -52,10 +46,11 @@ func init() {
 		log.Err(err)
 	}
 
-	discordToken = fmt.Sprintf(discordBotTokenf, cfg.DiscordToken)
+	discordToken = fmt.Sprintf(discordBotTokenFormat, cfg.DiscordToken)
 }
 
 func main() {
+	log.Info().Msg("Connecting to Discord")
 	discordSession, err := discord.New(discordToken)
 	if err != nil {
 		log.Err(err)
@@ -68,7 +63,7 @@ func main() {
 		log.Err(err)
 	}
 
-	log.Info().Msg(msgBotIsOnline)
+	log.Info().Msg("Bot is online")
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
