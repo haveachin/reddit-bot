@@ -20,7 +20,7 @@ type Post struct {
 	ImageURL string
 	// VideoURL is the URL to the video from the post
 	VideoURL string
-	// IsVideo determents if the post is a video or an image
+	// IsVideo determines if the post is a video or an image
 	IsVideo bool
 }
 
@@ -44,7 +44,7 @@ type postJSON []struct {
 	} `json:"data"`
 }
 
-// PostByID fetches the post with the corresponsing ID
+// PostByID fetches the post with the corresponding ID
 // A post ID is normally six characters long
 func PostByID(postID string) (Post, error) {
 	const apiPostURLf string = "https://www.reddit.com/%s/.json"
