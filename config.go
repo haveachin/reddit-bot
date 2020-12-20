@@ -33,7 +33,7 @@ func loadConfig() (config, error) {
 }
 
 func saveConfig(cfg config) error {
-	b, err := json.Marshal(cfg)
+	b, err := json.MarshalIndent(cfg, "", "    ")
 	if err != nil {
 		return err
 	}
