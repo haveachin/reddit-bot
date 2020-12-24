@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	colorReddit  int    = 16728833
-	emojiIDError string = "⚠️"
+	colorReddit        int    = 16728833
+	emojiIDErrorReddit string = "⚠️"
+	emojiIDErrorFFMPEG string = "😵"
+	emojiIDTooBig      string = "\U0001F975"
 )
 
 func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
@@ -32,8 +34,12 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 	post, err := reddit.PostByID(postId)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not fetch post metadata")
-		// TODO: Reply on message with error message
-		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDError)
+		s.ChannelMessageSendReply(m.ChannelID, "Reddit did not respond :(", &discord.MessageReference{
+			MessageID: m.ID,
+			ChannelID: m.ChannelID,
+			GuildID:   m.GuildID,
+		})
+		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorReddit)
 		return
 	}
 
@@ -69,7 +75,13 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		logger.Info().Msg("Processing post video")
 		file, eventLog, err := post.Video.DownloadVideo()
 		if err != nil {
-
+			s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", &discord.MessageReference{
+				MessageID: m.ID,
+				ChannelID: m.ChannelID,
+				GuildID:   m.GuildID,
+			})
+			s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorFFMPEG)
+			return
 		}
 		defer func() {
 			file.Close()
@@ -95,6 +107,12 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 	_, err = s.ChannelMessageSendComplex(m.ChannelID, msg)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not send embed")
+		s.ChannelMessageSendReply(m.ChannelID, "The video is too big", &discord.MessageReference{
+			MessageID: m.ID,
+			ChannelID: m.ChannelID,
+			GuildID:   m.GuildID,
+		})
+		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDTooBig)
 		return
 	}
 
