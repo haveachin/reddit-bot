@@ -34,11 +34,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 	post, err := reddit.PostByID(postId)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not fetch post metadata")
-		s.ChannelMessageSendReply(m.ChannelID, "Reddit did not respond :(", &discord.MessageReference{
-			MessageID: m.ID,
-			ChannelID: m.ChannelID,
-			GuildID:   m.GuildID,
-		})
+		s.ChannelMessageSendReply(m.ChannelID, "Reddit did not respond :(", m.Reference())
 		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorReddit)
 		return
 	}
@@ -75,11 +71,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		logger.Info().Msg("Processing post video")
 		file, eventLog, err := post.Video.DownloadVideo()
 		if err != nil {
-			s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", &discord.MessageReference{
-				MessageID: m.ID,
-				ChannelID: m.ChannelID,
-				GuildID:   m.GuildID,
-			})
+			s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", m.Reference())
 			s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorFFMPEG)
 			return
 		}
@@ -107,11 +99,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 	_, err = s.ChannelMessageSendComplex(m.ChannelID, msg)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not send embed")
-		s.ChannelMessageSendReply(m.ChannelID, "The video is too big", &discord.MessageReference{
-			MessageID: m.ID,
-			ChannelID: m.ChannelID,
-			GuildID:   m.GuildID,
-		})
+		s.ChannelMessageSendReply(m.ChannelID, "The video is too big", m.Reference())
 		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDTooBig)
 		return
 	}
