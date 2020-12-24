@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -19,14 +20,6 @@ func (video Video) DownloadVideo() (*os.File, []byte, error) {
 	eventLog := bytes.NewBuffer([]byte{})
 	eventLogger := log.New(eventLog, "", log.Ldate|log.Ltime)
 
-	audioFileName := randomMP4FileName()
-	eventLogger.Printf("Downloading audio from \"%s\" into file \"%s\"", video.AudioURL, audioFileName)
-	if err := downloadFile(audioFileName, video.AudioURL); err != nil {
-		eventLogger.Println(err)
-		return nil, eventLog.Bytes(), err
-	}
-	defer os.Remove(audioFileName)
-
 	videoFileName := randomMP4FileName()
 	eventLogger.Printf("Downloading video from \"%s\" into file \"%s\"", video.VideoURL, videoFileName)
 	if err := downloadFile(videoFileName, video.VideoURL); err != nil {
@@ -34,6 +27,15 @@ func (video Video) DownloadVideo() (*os.File, []byte, error) {
 		return nil, eventLog.Bytes(), err
 	}
 	defer os.Remove(videoFileName)
+
+	audioFileName := randomMP4FileName()
+	eventLogger.Printf("Downloading audio from \"%s\" into file \"%s\"", video.AudioURL, audioFileName)
+	if err := downloadFile(audioFileName, video.AudioURL); err != nil {
+		eventLogger.Println(err)
+		file, _ := os.Open(videoFileName)
+		return file, eventLog.Bytes(), err
+	}
+	defer os.Remove(audioFileName)
 
 	outputFileName := randomMP4FileName()
 	eventLogger.Printf("Combining audio and video into file \"%s\"", outputFileName)
@@ -63,6 +65,10 @@ func downloadFile(filepath string, url string) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("not ok")
+	}
 
 	out, err := os.Create(filepath)
 	if err != nil {
