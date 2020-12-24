@@ -13,6 +13,7 @@ import (
 
 const (
 	colorReddit        int    = 16729344
+	emojiIDWorkingOnIt string = "🎞️"
 	emojiIDErrorReddit string = "⚠️"
 	emojiIDErrorFFMPEG string = "😵"
 	emojiIDTooBig      string = "\U0001F975"
@@ -68,6 +69,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 	}
 
 	if post.IsVideo {
+		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWorkingOnIt)
 		logger.Info().Msg("Processing post video")
 		file, eventLog, err := post.Video.DownloadVideo()
 		if err != nil && file == nil {
