@@ -41,9 +41,15 @@ func init() {
 		captureNameSuffixMsg,
 	)
 
+	if err := os.Mkdir("logs", 0644); err != nil {
+		if os.IsNotExist(err) {
+			log.Error().Err(err).Msg("Could not create logs folder")
+		}
+	}
+
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Err(err)
+		log.Error().Err(err).Msg("Could not load config")
 	}
 
 	discordToken = fmt.Sprintf(discordBotTokenFormat, cfg.DiscordToken)
@@ -53,14 +59,16 @@ func main() {
 	log.Info().Msg("Connecting to Discord")
 	discordSession, err := discord.New(discordToken)
 	if err != nil {
-		log.Err(err)
+		log.Error().Err(err).Msg("Could not create session")
+		return
 	}
 	defer discordSession.Close()
 
 	discordSession.AddHandler(onRedditLinkMessage)
 
 	if err := discordSession.Open(); err != nil {
-		log.Err(err)
+		log.Error().Err(err).Msg("Could not connect to discord")
+		return
 	}
 
 	log.Info().Msg("Bot is online")
