@@ -6,22 +6,30 @@ import (
 	"net/http"
 )
 
+type PostType string
+
+const (
+	PostTypeImage PostType = "image"
+	PostTypeVideo PostType = "video"
+	PostTypeSelf  PostType = "self"
+)
+
 // Post is a very simplified variation of a JSON response given from the reddit api
 type Post struct {
-	// Title is the title of the Post
-	Title string
-	// Subreddit is the name of the subreddit that this post originated from
+	Title     string
+	Text      string
 	Subreddit string
-	// Author is the name of the user that posted this post
-	Author string
-	// Permalink is the permanent URL for this post
+	Author    string
 	Permalink string
-	// ImageURL is the URL to the image form the post
-	ImageURL string
-	// VideoURL is the URL to the video from the post
+	ImageURL  string
+	IsImage   bool
+	IsVideo   bool
+	Video     Video
+}
+
+type Video struct {
 	VideoURL string
-	// IsVideo determines if the post is a video or an image
-	IsVideo bool
+	AudioURL string
 }
 
 type postJSON []struct {
@@ -29,14 +37,16 @@ type postJSON []struct {
 		Children []struct {
 			Data struct {
 				Title     string `json:"title"`
+				Text      string `json:"selftext"`
 				Subreddit string `json:"subreddit"`
 				Author    string `json:"author"`
 				Permalink string `json:"permalink"`
 				URL       string `json:"url"`
+				PostHint  string `json:"post_hint"`
 				IsVideo   bool   `json:"is_video"`
 				Media     struct {
 					Video struct {
-						URL string `json:"dash_url"`
+						URL string `json:"fallback_url"`
 					} `json:"reddit_video"`
 				} `json:"media"`
 			} `json:"data"`
@@ -75,11 +85,16 @@ func PostByID(postID string) (Post, error) {
 
 	return Post{
 		Title:     postJSON[0].Data.Children[0].Data.Title,
+		Text:      postJSON[0].Data.Children[0].Data.Text,
 		Subreddit: postJSON[0].Data.Children[0].Data.Subreddit,
 		Author:    postJSON[0].Data.Children[0].Data.Author,
 		Permalink: postJSON[0].Data.Children[0].Data.Permalink,
 		ImageURL:  postJSON[0].Data.Children[0].Data.URL,
-		VideoURL:  postJSON[0].Data.Children[0].Data.Media.Video.URL,
+		IsImage:   postJSON[0].Data.Children[0].Data.PostHint == string(PostTypeImage),
 		IsVideo:   postJSON[0].Data.Children[0].Data.IsVideo,
+		Video: Video{
+			VideoURL: postJSON[0].Data.Children[0].Data.Media.Video.URL,
+			AudioURL: postJSON[0].Data.Children[0].Data.URL + "/DASH_audio.mp4",
+		},
 	}, nil
 }
