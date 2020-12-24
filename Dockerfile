@@ -1,14 +1,14 @@
 FROM golang:latest AS builder
-WORKDIR $GOPATH/src/github.com/haveachin/reddit-bot
+LABEL stage=intermediate
+WORKDIR /
 COPY . .
-WORKDIR $GOPATH/src/github.com/haveachin/reddit-bot
-RUN go get -d -v ./...
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o /main .
+ENV GO111MODULE=on
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /main .
 
-FROM alpine:latest
+FROM jrottenberg/ffmpeg:4.1-alpine
 LABEL maintainer="Hendrik Jonas Schlehlein <hendrik.schlehlein@gmail.com>"
 RUN apk --no-cache add ca-certificates
+WORKDIR /reddit-bot
 COPY --from=builder /main ./
-RUN mkdir configs
 RUN chmod +x ./main
 ENTRYPOINT [ "./main" ]

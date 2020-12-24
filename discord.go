@@ -2,15 +2,20 @@ package main
 
 import (
 	"fmt"
-
 	discord "github.com/bwmarrin/discordgo"
 	"github.com/haveachin/reddit-bot/reddit"
 	"github.com/rs/zerolog/log"
+	"html"
+	"io"
+	"os"
+	"time"
 )
 
 const (
-	colorReddit  int    = 16728833
-	emojiIDError string = "⚠️"
+	colorReddit        int    = 16728833
+	emojiIDErrorReddit string = "⚠️"
+	emojiIDErrorFFMPEG string = "😵"
+	emojiIDTooBig      string = "\U0001F975"
 )
 
 func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
@@ -23,50 +28,92 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	post, err := reddit.PostByID(matches.CaptureByName(captureNamePostID))
+	postId := matches.CaptureByName(captureNamePostID)
+	logger := log.With().Str("postId", postId).Logger()
+	logger.Info().Msg("Fetching post metadata")
+	post, err := reddit.PostByID(postId)
 	if err != nil {
-		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDError)
-		log.Err(err)
+		logger.Error().Err(err).Msg("Could not fetch post metadata")
+		s.ChannelMessageSendReply(m.ChannelID, "Reddit did not respond :(", m.Reference())
+		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorReddit)
 		return
 	}
 
 	prefixMsg := matches.CaptureByName(captureNamePrefixMsg)
 	suffixMsg := matches.CaptureByName(captureNameSuffixMsg)
 	permalink := fmt.Sprintf("https://reddit.com%s", post.Permalink)
-	description := fmt.Sprintf("%s by u/%s", post.Subreddit, post.Author)
+	title := fmt.Sprintf("r/%s - %s", post.Subreddit, post.Title)
+	description := post.Text
+	if len(description) > 1000 {
+		description = html.UnescapeString(fmt.Sprintf("%.1000s...", post.Text))
+	}
+	footer := fmt.Sprintf("by u/%s", post.Author)
 
-	messageSend := &discord.MessageSend{
+	msg := &discord.MessageSend{
 		Content: prefixMsg + suffixMsg,
 		Embed: &discord.MessageEmbed{
-			Title: post.Title,
-			Color: colorReddit,
-			URL:   permalink,
+			Type: discord.EmbedTypeVideo,
 			Author: &discord.MessageEmbedAuthor{
 				Name:    m.Author.Username,
 				IconURL: m.Author.AvatarURL(""),
 			},
+			Title:       title,
+			Color:       colorReddit,
+			URL:         permalink,
 			Description: description,
+			Footer: &discord.MessageEmbedFooter{
+				Text: footer,
+			},
 		},
 	}
 
 	if post.IsVideo {
-		messageSend.Embed.Video = &discord.MessageEmbedVideo{
-			URL: post.VideoURL,
+		logger.Info().Msg("Processing post video")
+		file, eventLog, err := post.Video.DownloadVideo()
+		if err != nil {
+			s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", m.Reference())
+			s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorFFMPEG)
+			return
 		}
-		messageSend.Embed.Footer = &discord.MessageEmbedFooter{
-			Text: "Watch the video on Reddit",
+		defer func() {
+			file.Close()
+			os.Remove(file.Name())
+		}()
+
+		if err := saveEventLog(eventLog); err != nil {
+			logger.Error().Err(err).Msg("Could not save event log")
 		}
-	} else {
-		messageSend.Embed.Image = &discord.MessageEmbedImage{
+
+		logger.Info().Msg("Embedding video file")
+		msg.File = &discord.File{
+			Name:   postId + ".mp4",
+			Reader: file,
+		}
+	} else if post.IsImage {
+		logger.Info().Msg("Embedding image url")
+		msg.Embed.Image = &discord.MessageEmbedImage{
 			URL: post.ImageURL,
 		}
 	}
 
-	_, err = s.ChannelMessageSendComplex(m.ChannelID, messageSend)
+	_, err = s.ChannelMessageSendComplex(m.ChannelID, msg)
 	if err != nil {
-		log.Err(err)
+		logger.Error().Err(err).Msg("Could not send embed")
+		s.ChannelMessageSendReply(m.ChannelID, "The video is too big", m.Reference())
+		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDTooBig)
 		return
 	}
 
 	s.ChannelMessageDelete(m.ChannelID, m.ID)
+}
+
+func saveEventLog(eventLog []byte) error {
+	file, err := os.Create(fmt.Sprintf("./logs/%d.txt", time.Now().UnixNano()))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.WriteString(file, string(eventLog))
+	return err
 }
