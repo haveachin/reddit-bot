@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	colorReddit        int    = 16728833
+	colorReddit        int    = 16729344
 	emojiIDErrorReddit string = "⚠️"
 	emojiIDErrorFFMPEG string = "😵"
 	emojiIDTooBig      string = "\U0001F975"
