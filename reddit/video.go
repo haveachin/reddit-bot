@@ -39,12 +39,14 @@ func (video Video) DownloadVideo() (*os.File, []byte, error) {
 	eventLogger.Printf("Combining audio and video into file \"%s\"", outputFileName)
 	if err := combineAudioAndVideo(eventLog, audioFileName, videoFileName, outputFileName); err != nil {
 		eventLogger.Println(err)
+		os.Remove(outputFileName)
 		return nil, eventLog.Bytes(), err
 	}
 
 	file, err := os.Open(outputFileName)
 	if err != nil {
 		eventLogger.Println(err)
+		os.Remove(outputFileName)
 		return nil, nil, err
 	}
 
