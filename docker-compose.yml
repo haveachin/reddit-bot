@@ -6,4 +6,5 @@ services:
     container_name: "reddit-bot"
     restart: "unless-stopped"
     volumes:
-      - "/opt/discord/bots/reddit-bot:/reddit-bot"
+      - "/opt/discord/bots/reddit-bot/logs:/reddit-bot/logs"
+      - "/opt/discord/bots/reddit-bot/config.json:/reddit-bot/logs/config.json"
