@@ -7,4 +7,4 @@ services:
     restart: "unless-stopped"
     volumes:
       - "/opt/discord/bots/reddit-bot/logs:/reddit-bot/logs"
-      - "/opt/discord/bots/reddit-bot/config.json:/reddit-bot/logs/config.json"
+      - "/opt/discord/bots/reddit-bot/config.json:/reddit-bot/config.json"
