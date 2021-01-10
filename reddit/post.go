@@ -10,7 +10,8 @@ type PostType string
 
 const (
 	PostTypeImage PostType = "image"
-	PostTypeVideo PostType = "video"
+	PostTypeVideoHosted PostType = "hosted:video"
+	PostTypeVideoEmbed PostType = "rich:video"
 	PostTypeSelf  PostType = "self"
 )
 
@@ -24,7 +25,9 @@ type Post struct {
 	ImageURL  string
 	IsImage   bool
 	IsVideo   bool
+	IsEmbed   bool
 	Video     Video
+	HTMLEmbed    string // html embedded media
 }
 
 type Video struct {
@@ -48,6 +51,9 @@ type postJSON []struct {
 					Video struct {
 						URL string `json:"fallback_url"`
 					} `json:"reddit_video"`
+					Oembed struct {
+						HTML string `json:"html"`
+					} `json:"oembed"`
 				} `json:"media"`
 			} `json:"data"`
 		} `json:"children"`
@@ -92,9 +98,11 @@ func PostByID(postID string) (Post, error) {
 		ImageURL:  postJSON[0].Data.Children[0].Data.URL,
 		IsImage:   postJSON[0].Data.Children[0].Data.PostHint == string(PostTypeImage),
 		IsVideo:   postJSON[0].Data.Children[0].Data.IsVideo,
+		IsEmbed:   postJSON[0].Data.Children[0].Data.PostHint == string(PostTypeVideoEmbed), // TODO: change this
 		Video: Video{
 			VideoURL: postJSON[0].Data.Children[0].Data.Media.Video.URL,
 			AudioURL: postJSON[0].Data.Children[0].Data.URL + "/DASH_audio.mp4",
 		},
+		HTMLEmbed: postJSON[0].Data.Children[0].Data.Media.Oembed.HTML,
 	}, nil
 }
