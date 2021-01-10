@@ -18,6 +18,9 @@ func newMatcher(s Source) (matcher, error) {
 	case Youtube:
 		m.p = pYoutube
 		m.urlTmpl = urlYoutube
+	case Gfycat:
+		m.p = pGfycat
+		m.urlTmpl = urlGfycat
 	default:
 		return m, ErrorNotImplemented
 	}
