@@ -8,7 +8,7 @@ import (
 // prepare regex
 const patternYT = `(?s).*https:\/\/(?:www\.)youtube\.com\/embed\/(?P<%s>.+?)[\?\\\/].*`
 const id = "id"
-var p = regex.MustCompile(pattern, id)
+var p = regex.MustCompile(patternYT, id)
 
 func generateYouTubeURL(s string) (string, error) {
 	// match against html and fetch video id

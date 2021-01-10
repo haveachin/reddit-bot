@@ -73,6 +73,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		logger.Info().Msg("Processing post video")
 		file, eventLog, err := post.Video.DownloadVideo()
 		if err != nil && file == nil {
+			logger.Error().Err(err).Msg("ffmpeg error")
 			s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", m.Reference())
 			s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorFFMPEG)
 			return
