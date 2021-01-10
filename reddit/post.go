@@ -9,10 +9,10 @@ import (
 type PostType string
 
 const (
-	PostTypeImage PostType = "image"
+	PostTypeImage       PostType = "image"
 	PostTypeVideoHosted PostType = "hosted:video"
-	PostTypeVideoEmbed PostType = "rich:video"
-	PostTypeSelf  PostType = "self"
+	PostTypeVideoEmbed  PostType = "rich:video"
+	PostTypeSelf        PostType = "self"
 )
 
 // Post is a very simplified variation of a JSON response given from the reddit api
@@ -27,8 +27,13 @@ type Post struct {
 	IsVideo   bool
 	IsEmbed   bool
 	Video     Video
-	HTMLEmbed    string // html embedded media
+	Embed     Embed
 }
+
+type Embed struct {
+	HTML string
+	Type string
+} // html embedded media
 
 type Video struct {
 	VideoURL string
@@ -48,6 +53,7 @@ type postJSON []struct {
 				PostHint  string `json:"post_hint"`
 				IsVideo   bool   `json:"is_video"`
 				Media     struct {
+					Type  string `json:"type"`
 					Video struct {
 						URL string `json:"fallback_url"`
 					} `json:"reddit_video"`
@@ -103,6 +109,9 @@ func PostByID(postID string) (Post, error) {
 			VideoURL: postJSON[0].Data.Children[0].Data.Media.Video.URL,
 			AudioURL: postJSON[0].Data.Children[0].Data.URL + "/DASH_audio.mp4",
 		},
-		HTMLEmbed: postJSON[0].Data.Children[0].Data.Media.Oembed.HTML,
+		Embed: Embed{
+			HTML: postJSON[0].Data.Children[0].Data.Media.Oembed.HTML,
+			Type: postJSON[0].Data.Children[0].Data.Media.Type,
+		},
 	}, nil
 }

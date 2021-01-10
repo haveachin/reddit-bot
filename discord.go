@@ -98,7 +98,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 			URL: post.ImageURL,
 		}
 	} else if post.IsEmbed {
-		url, err := generateYouTubeURL(post.HTMLEmbed)
+		url, err := generateYouTubeURL(post.Embed.HTML)
 		if err != nil{
 			logger.Warn().Err(err).Msg("HTML of embedded video did not contain yt video")
 		}
