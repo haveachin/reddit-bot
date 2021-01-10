@@ -3,6 +3,7 @@ package regex
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 // Pattern represents a regex-pattern similar to regexp.Regexp
@@ -22,12 +23,12 @@ func (p *Pattern) Regex() *regexp.Regexp {
 // This method allows for appending the names of the capture groups after pattern.
 // To refer to a capture group name in the pattern use %s as specified by e.g. fmt.Sprintf(..)
 func MustCompile(pattern string, names ...string) Pattern {
-	inter := []interface{}{}
+	s := pattern
 	for _, v := range names {
-		inter = append(inter, v)
+		s = strings.Replace(s, "%s", v, 1)
 	}
 
-	re := regexp.MustCompile(fmt.Sprintf(pattern, inter...))
+	re := regexp.MustCompile(s)
 	return Pattern{re}
 }
 
