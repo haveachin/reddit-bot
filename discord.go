@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	discord "github.com/bwmarrin/discordgo"
+	"github.com/haveachin/reddit-bot/embed"
 	"github.com/haveachin/reddit-bot/reddit"
 	"github.com/rs/zerolog/log"
 	"html"
@@ -17,6 +18,10 @@ const (
 	emojiIDErrorReddit string = "⚠️"
 	emojiIDErrorFFMPEG string = "😵"
 	emojiIDTooBig      string = "\U0001F975"
+)
+
+var (
+	embedder = embed.NewEmbedder()
 )
 
 func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
@@ -98,9 +103,11 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 			URL: post.ImageURL,
 		}
 	} else if post.IsEmbed {
-		url, err := generateYouTubeURL(post.HTMLEmbed)
-		if err != nil{
-			logger.Warn().Err(err).Msg("HTML of embedded video did not contain yt video")
+		url, err := embedder.Embed(&post)
+		if err == embed.ErrorNotImplemented {
+			logger.Warn().Err(err).Msg("embedded website (source) is not yet implemented")
+		} else if err != nil {
+			logger.Error().Err(err).Msg("something went wrong while analyzing embedded content")
 		}
 		s.ChannelMessageSend(m.ChannelID, url)
 		logger.Info().Msg("Sending embedded YouTube video")
