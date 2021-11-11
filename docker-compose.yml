@@ -2,9 +2,9 @@ version: "3"
 
 services:
   reddit-bot:
-    build: "."
-    container_name: "reddit-bot"
-    restart: "unless-stopped"
+    image: ghcr.io/haveachin/reddit-bot:latest
+    container_name: reddit-bot
+    restart: unless-stopped
     volumes:
-      - "/opt/discord/bots/reddit-bot/logs:/reddit-bot/logs"
-      - "/opt/discord/bots/reddit-bot/config.json:/reddit-bot/config.json"
+      - "./data/logs:/reddit-bot/logs"
+      - "./data/config.json:/reddit-bot/config.json"
