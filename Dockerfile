@@ -7,6 +7,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /main .
 
 FROM jrottenberg/ffmpeg:4.1-alpine
 LABEL maintainer="Hendrik Jonas Schlehlein <hendrik.schlehlein@gmail.com>"
+LABEL org.opencontainers.image.source https://github.com/haveachin/reddit-bot
 RUN apk --no-cache add ca-certificates
 WORKDIR /reddit-bot
 COPY --from=builder /main ./
