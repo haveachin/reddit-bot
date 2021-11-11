@@ -5,8 +5,8 @@ import (
 )
 
 type matcher struct {
-	s Source
-	p regex.Pattern
+	s       Source
+	p       regex.Pattern
 	urlTmpl string
 }
 

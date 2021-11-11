@@ -49,7 +49,7 @@ type postJSON []struct {
 				Subreddit string `json:"subreddit"`
 				Author    string `json:"author"`
 				Permalink string `json:"permalink"`
-				URL       string `json:"url"`
+				ImageURL  string `json:"url"`
 				PostHint  string `json:"post_hint"`
 				IsVideo   bool   `json:"is_video"`
 				Media     struct {
@@ -95,23 +95,27 @@ func PostByID(postID string) (Post, error) {
 		return Post{}, ErrBadResponse
 	}
 
+	data := postJSON[0].Data.Children[0].Data
+	isImage := data.PostHint == string(PostTypeImage)
+	isEmbed := data.PostHint == string(PostTypeVideoEmbed) // TODO: change this
+	isImage = isImage || (!isEmbed && !data.IsVideo && data.ImageURL != "")
 	return Post{
-		Title:     postJSON[0].Data.Children[0].Data.Title,
-		Text:      postJSON[0].Data.Children[0].Data.Text,
-		Subreddit: postJSON[0].Data.Children[0].Data.Subreddit,
-		Author:    postJSON[0].Data.Children[0].Data.Author,
-		Permalink: postJSON[0].Data.Children[0].Data.Permalink,
-		ImageURL:  postJSON[0].Data.Children[0].Data.URL,
-		IsImage:   postJSON[0].Data.Children[0].Data.PostHint == string(PostTypeImage),
-		IsVideo:   postJSON[0].Data.Children[0].Data.IsVideo,
-		IsEmbed:   postJSON[0].Data.Children[0].Data.PostHint == string(PostTypeVideoEmbed), // TODO: change this
+		Title:     data.Title,
+		Text:      data.Text,
+		Subreddit: data.Subreddit,
+		Author:    data.Author,
+		Permalink: data.Permalink,
+		ImageURL:  data.ImageURL,
+		IsImage:   isImage,
+		IsVideo:   data.IsVideo,
+		IsEmbed:   isEmbed,
 		Video: Video{
-			VideoURL: postJSON[0].Data.Children[0].Data.Media.Video.URL,
-			AudioURL: postJSON[0].Data.Children[0].Data.URL + "/DASH_audio.mp4",
+			VideoURL: data.Media.Video.URL,
+			AudioURL: data.ImageURL + "/DASH_audio.mp4",
 		},
 		Embed: Embed{
-			HTML: postJSON[0].Data.Children[0].Data.Media.Oembed.HTML,
-			Type: postJSON[0].Data.Children[0].Data.Media.Type,
+			HTML: data.Media.Oembed.HTML,
+			Type: data.Media.Type,
 		},
 	}, nil
 }

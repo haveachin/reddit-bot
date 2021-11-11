@@ -2,6 +2,7 @@ package embed
 
 import (
 	"fmt"
+
 	"github.com/haveachin/reddit-bot/reddit"
 )
 
