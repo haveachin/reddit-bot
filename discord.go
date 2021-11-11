@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	discord "github.com/bwmarrin/discordgo"
-	"github.com/haveachin/reddit-bot/embed"
-	"github.com/haveachin/reddit-bot/reddit"
-	"github.com/rs/zerolog/log"
 	"html"
 	"io"
 	"os"
 	"time"
+
+	discord "github.com/bwmarrin/discordgo"
+	"github.com/haveachin/reddit-bot/embed"
+	"github.com/haveachin/reddit-bot/reddit"
+	"github.com/rs/zerolog/log"
 )
 
 const (
