@@ -1,0 +1,23 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: "Build:checkout"
+      uses: actions/checkout@v2
+    - name: 'Build:dockerimage'
+      uses: docker/build-push-action@v1
+      with:
+        registry: ghcr.io
+        username: "haveachin"
+        password: ${{ secrets.CONTAINER_REGISTRY }}
+        dockerfile: build/package/Dockerfile
+        repository: haveachin/reddit-bot
+        tags: latest
