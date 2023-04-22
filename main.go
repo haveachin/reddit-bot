@@ -18,10 +18,8 @@ const (
 	captureNameSubreddit string = "subreddit"
 	captureNamePostID    string = "postID"
 	captureNameSuffixMsg string = "suffix"
-)
 
-const (
-	discordBotTokenFormat string = "Bot %s"
+	envVarPrefix = "REDDITBOT_"
 )
 
 var (
@@ -29,7 +27,22 @@ var (
 	discordToken      string
 )
 
+func envVarStringVar(p *string, name, value string) {
+	key := envVarPrefix + name
+	if v := os.Getenv(key); v != "" {
+		*p = v
+	} else {
+		*p = value
+	}
+}
+
+func initEnvVars() {
+	envVarStringVar(&discordToken, "DISCORD_TOKEN", discordToken)
+}
+
 func init() {
+	initEnvVars()
+
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
@@ -47,16 +60,12 @@ func init() {
 		}
 	}
 
-	cfg, err := loadConfig()
-	if err != nil {
-		log.Error().Err(err).Msg("Could not load config")
-	}
-
-	discordToken = fmt.Sprintf(discordBotTokenFormat, cfg.DiscordToken)
+	discordToken = fmt.Sprintf("Bot %s", discordToken)
 }
 
 func main() {
 	log.Info().Msg("Connecting to Discord")
+	log.Print(discordToken)
 	discordSession, err := discord.New(discordToken)
 	if err != nil {
 		log.Error().Err(err).Msg("Could not create session")
@@ -74,6 +83,6 @@ func main() {
 	log.Info().Msg("Bot is online")
 
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 }

@@ -1,0 +1,24 @@
+when:
+  - event: push
+
+pipeline:
+  build:
+    image: docker:git
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - docker build -f build/package/Dockerfile -t reddit-bot:$(git rev-parse --short HEAD) .
+
+  deploy:
+    when:
+      - branch: main
+    image: docker:git
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - cd deployments
+      - export IMAGE_TAG=$(git rev-parse --short HEAD)
+      - export NAME=reddit-bot
+      - docker compose -p $NAME down
+      - docker compose -p $NAME up -d
+    secrets: [domain, client_secret]
