@@ -65,7 +65,6 @@ func init() {
 
 func main() {
 	log.Info().Msg("Connecting to Discord")
-	log.Print(discordToken)
 	discordSession, err := discord.New(discordToken)
 	if err != nil {
 		log.Error().Err(err).Msg("Could not create session")
@@ -79,6 +78,18 @@ func main() {
 		log.Error().Err(err).Msg("Could not connect to discord")
 		return
 	}
+
+	for _, g := range discordSession.State.Guilds {
+		g, err := discordSession.Guild(g.ID)
+		if err != nil {
+			log.Error().Err(err)
+			continue
+		}
+		log.Print(g.Name)
+	}
+
+	status := fmt.Sprintf("Reddit for %d Servers", len(discordSession.State.Guilds))
+	discordSession.UpdateWatchStatus(0, status)
 
 	log.Info().Msg("Bot is online")
 
