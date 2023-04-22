@@ -21,4 +21,4 @@ pipeline:
       - export NAME=reddit-bot
       - docker compose -p $NAME down
       - docker compose -p $NAME up -d
-    secrets: [domain, client_secret]
+    secrets: [discord_token]
