@@ -1,7 +1,7 @@
 when:
   - event: push
 
-steps:
+pipeline:
   build:
     image: docker:git
     volumes:
