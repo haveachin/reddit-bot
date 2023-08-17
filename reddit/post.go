@@ -17,6 +17,7 @@ const (
 
 // Post is a very simplified variation of a JSON response given from the reddit api
 type Post struct {
+	ID        string
 	Title     string
 	Text      string
 	Subreddit string
@@ -26,19 +27,17 @@ type Post struct {
 	IsImage   bool
 	IsVideo   bool
 	IsEmbed   bool
-	Video     Video
 	Embed     Embed
+}
+
+func (p Post) URL() string {
+	return "https://www.reddit.com/" + p.ID
 }
 
 type Embed struct {
 	HTML string
 	Type string
 } // html embedded media
-
-type Video struct {
-	VideoURL string
-	AudioURL string
-}
 
 type postJSON []struct {
 	Data struct {
@@ -53,10 +52,7 @@ type postJSON []struct {
 				PostHint  string `json:"post_hint"`
 				IsVideo   bool   `json:"is_video"`
 				Media     struct {
-					Type  string `json:"type"`
-					Video struct {
-						URL string `json:"fallback_url"`
-					} `json:"reddit_video"`
+					Type   string `json:"type"`
 					Oembed struct {
 						HTML string `json:"html"`
 					} `json:"oembed"`
@@ -100,6 +96,7 @@ func PostByID(postID string) (Post, error) {
 	isEmbed := data.PostHint == string(PostTypeVideoEmbed) // TODO: change this
 	isImage = isImage || (!isEmbed && !data.IsVideo && data.ImageURL != "")
 	return Post{
+		ID:        postID,
 		Title:     data.Title,
 		Text:      data.Text,
 		Subreddit: data.Subreddit,
@@ -109,10 +106,6 @@ func PostByID(postID string) (Post, error) {
 		IsImage:   isImage,
 		IsVideo:   data.IsVideo,
 		IsEmbed:   isEmbed,
-		Video: Video{
-			VideoURL: data.Media.Video.URL,
-			AudioURL: data.ImageURL + "/DASH_audio.mp4",
-		},
 		Embed: Embed{
 			HTML: data.Media.Oembed.HTML,
 			Type: data.Media.Type,
