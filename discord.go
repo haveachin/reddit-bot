@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"html"
-	"io"
 	"os"
-	"time"
 
 	discord "github.com/bwmarrin/discordgo"
 	"github.com/haveachin/reddit-bot/embed"
@@ -77,7 +75,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 	if post.IsVideo {
 		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWorkingOnIt)
 		logger.Info().Msg("Processing post video")
-		file, eventLog, err := post.Video.DownloadVideo()
+		file, err := post.DownloadVideo()
 		if err != nil && file == nil {
 			logger.Error().Err(err).Msg("ffmpeg error")
 			s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", m.Reference())
@@ -88,10 +86,6 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 			file.Close()
 			os.Remove(file.Name())
 		}()
-
-		if err := saveEventLog(eventLog); err != nil {
-			logger.Error().Err(err).Msg("Could not save event log")
-		}
 
 		logger.Info().Msg("Embedding video file")
 		msg.File = &discord.File{
@@ -123,15 +117,4 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 	}
 
 	s.ChannelMessageDelete(m.ChannelID, m.ID)
-}
-
-func saveEventLog(eventLog []byte) error {
-	file, err := os.Create(fmt.Sprintf("./logs/%d.txt", time.Now().UnixNano()))
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.WriteString(file, string(eventLog))
-	return err
 }

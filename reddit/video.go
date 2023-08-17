@@ -1,102 +1,30 @@
 package reddit
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
-	"io"
-	"log"
-	"math/rand"
-	"net/http"
 	"os"
 	"os/exec"
 )
 
-// DownloadVideo downloads the audio and video file from the Reddit servers and
-// combines them locally with ffmpeg into one video file.
-// This is thread safe and can be executed in parallel.
-// Returns the combined video file, event log, and an error
-func (video Video) DownloadVideo() (*os.File, []byte, error) {
-	eventLog := bytes.NewBuffer([]byte{})
-	eventLogger := log.New(eventLog, "", log.Ldate|log.Ltime)
-
-	videoFileName := randomMP4FileName()
-	eventLogger.Printf("Downloading video from \"%s\" into file \"%s\"", video.VideoURL, videoFileName)
-	if err := downloadFile(videoFileName, video.VideoURL); err != nil {
-		eventLogger.Println(err)
-		return nil, eventLog.Bytes(), err
-	}
-	defer os.Remove(videoFileName)
-
-	audioFileName := randomMP4FileName()
-	eventLogger.Printf("Downloading audio from \"%s\" into file \"%s\"", video.AudioURL, audioFileName)
-	if err := downloadFile(audioFileName, video.AudioURL); err != nil {
-		eventLogger.Println(err)
-		file, _ := os.Open(videoFileName)
-		return file, eventLog.Bytes(), err
-	}
-	defer os.Remove(audioFileName)
-
-	outputFileName := randomMP4FileName()
-	eventLogger.Printf("Combining audio and video into file \"%s\"", outputFileName)
-	if err := combineAudioAndVideo(eventLog, audioFileName, videoFileName, outputFileName); err != nil {
-		eventLogger.Println(err)
-		os.Remove(outputFileName)
-		return nil, eventLog.Bytes(), err
+func (p Post) DownloadVideo() (*os.File, error) {
+	path := p.ID + ".mp4"
+	if err := downloadVideo(path, p.URL()); err != nil {
+		return nil, err
 	}
 
-	file, err := os.Open(outputFileName)
+	file, err := os.Open(path)
 	if err != nil {
-		eventLogger.Println(err)
-		os.Remove(outputFileName)
-		return nil, nil, err
+		return nil, os.Remove(path)
 	}
 
-	return file, eventLog.Bytes(), nil
+	return file, nil
 }
 
-func randomMP4FileName() string {
-	return fmt.Sprintf("%d.mp4", rand.Int())
-}
-
-func downloadFile(filepath string, url string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("not ok")
-	}
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, resp.Body); err != nil {
-		defer os.Remove(filepath)
-		return err
-	}
-
-	return nil
-}
-
-func combineAudioAndVideo(eventLog io.Writer, audioFilePath, videoFilePath, outputFileName string) error {
-	cmd := exec.Command("ffmpeg",
-		"-i", videoFilePath,
-		"-i", audioFilePath,
-		"-c:v", "libx264",
-		"-c:a", "aac",
-		"-crf", "24",
-		"-preset", "faster",
-		"-tune", "film",
-		"-vf", "scale='min(480, iw)':-2",
-		outputFileName,
+func downloadVideo(filepath string, url string) error {
+	cmd := exec.Command("yt-dlp",
+		"--no-continue",
+		"--postprocessor-args", "-c:v libx264 -c:a aac -crf 24 -preset faster -tune film",
+		"-o", filepath,
+		url,
 	)
-	cmd.Stdout = eventLog
-	cmd.Stderr = eventLog
 	return cmd.Run()
 }
