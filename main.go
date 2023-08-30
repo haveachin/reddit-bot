@@ -14,6 +14,7 @@ import (
 
 const (
 	pattern              string = `(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/comments\/(?P<%s>.+?)\/[^\s\n]*\s?(?P<%s>.*)`
+	mpattern             string = `https?:\/\/(?:www\.)?reddit\.com\/r\/\w+\/s\/([a-z]?[A-Z]?[0-9]?)+`
 	captureNamePrefixMsg string = "prefix"
 	captureNameSubreddit string = "subreddit"
 	captureNamePostID    string = "postID"
@@ -23,8 +24,9 @@ const (
 )
 
 var (
-	redditPostPattern regex.Pattern
-	discordToken      string
+	mredditPostPattern regex.Pattern
+	redditPostPattern  regex.Pattern
+	discordToken       string
 )
 
 func envVarStringVar(p *string, name, value string) {
@@ -52,6 +54,10 @@ func init() {
 		captureNameSubreddit,
 		captureNamePostID,
 		captureNameSuffixMsg,
+	)
+
+	mredditPostPattern = regex.MustCompile(
+		mpattern,
 	)
 
 	if err := os.Mkdir("logs", 0644); err != nil {

@@ -21,6 +21,7 @@ const (
 
 var (
 	embedder = embed.NewEmbedder()
+	URL      string
 )
 
 func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
@@ -28,8 +29,21 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	matches, err := redditPostPattern.FindStringSubmatch(m.Content)
+	_, err := mredditPostPattern.FindStringSubmatch(m.Content)
 	if err != nil {
+		log.Info().Msg("No Mobile Link")
+		URL = m.Content
+	} else {
+		URL, err = reddit.ConvertToDesktop(m.Content)
+		if err != nil {
+			log.Info().Err(err).Msg("Could not convert to desktop")
+			return
+		}
+	}
+
+	matches, err := redditPostPattern.FindStringSubmatch(URL)
+	if err != nil {
+		log.Info().Err(err).Msg("Could not match regex")
 		return
 	}
 
