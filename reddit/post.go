@@ -62,19 +62,31 @@ type postJSON []struct {
 	} `json:"data"`
 }
 
-// PostByID fetches the post with the corresponding ID
-// A post ID is normally six characters long
-func PostByID(postID string) (Post, error) {
+func fetchPost(postID string) (*http.Response, error) {
 	const apiPostURLf string = "https://www.reddit.com/%s/.json"
 	url := fmt.Sprintf(apiPostURLf, postID)
 
-	resp, err := defaultClient.Get(url)
+	for i := 3; i > 0; i-- {
+		resp, err := defaultClient.Get(url)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			continue
+		}
+
+		return resp, nil
+	}
+	return nil, ErrBadResponse
+}
+
+// PostByID fetches the post with the corresponding ID
+// A post ID is normally six characters long
+func PostByID(postID string) (Post, error) {
+	resp, err := fetchPost(postID)
 	if err != nil {
 		return Post{}, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return Post{}, ErrBadResponse
 	}
 
 	postJSON := postJSON{}
