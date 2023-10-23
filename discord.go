@@ -33,10 +33,33 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	postId := matches.CaptureByName(captureNamePostID)
-	logger := log.With().Str("postId", postId).Logger()
+	linkType := matches.CaptureByName(captureNameLinkType)
+	logger := log.With().Str("linkType", linkType).Logger()
+	if reddit.LinkType(linkType) == reddit.ShareLinkType {
+		subreddit := matches.CaptureByName(captureNameSubreddit)
+		shareID := matches.CaptureByName(captureNamePostID)
+		logger = logger.With().Str("shareID", shareID).Logger()
+		url, err := reddit.ResolvePostURLFromShareID(subreddit, shareID)
+		if err != nil {
+			logger.Error().Err(err).Msg("Could not fetch post metadata")
+			s.ChannelMessageSendReply(m.ChannelID, "Share link could not be resolved :(", m.Reference())
+			s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorReddit)
+			return
+		}
+
+		prefixMsg := matches.CaptureByName(captureNamePrefixMsg)
+		suffixMsg := matches.CaptureByName(captureNameSuffixMsg)
+		content := fmt.Sprintf("%s%s %s", prefixMsg, url, suffixMsg)
+		matches, err = redditPostPattern.FindStringSubmatch(content)
+		if err != nil {
+			return
+		}
+	}
+
+	postID := matches.CaptureByName(captureNamePostID)
+	logger = logger.With().Str("postID", postID).Logger()
 	logger.Info().Msg("Fetching post metadata")
-	post, err := reddit.PostByID(postId)
+	post, err := reddit.PostByID(postID)
 	if err != nil {
 		logger.Error().Err(err).Msg("Could not fetch post metadata")
 		s.ChannelMessageSendReply(m.ChannelID, "Reddit did not respond :(", m.Reference())
@@ -89,7 +112,7 @@ func onRedditLinkMessage(s *discord.Session, m *discord.MessageCreate) {
 
 		logger.Info().Msg("Embedding video file")
 		msg.File = &discord.File{
-			Name:   postId + ".mp4",
+			Name:   postID + ".mp4",
 			Reader: file,
 		}
 	} else if post.IsImage {

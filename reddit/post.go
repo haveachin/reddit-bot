@@ -62,6 +62,13 @@ type postJSON []struct {
 	} `json:"data"`
 }
 
+type LinkType string
+
+const (
+	ShareLinkType    = LinkType("s")
+	CommentsLinkType = LinkType("comments")
+)
+
 func fetchPost(postID string) (*http.Response, error) {
 	const apiPostURLf string = "https://www.reddit.com/%s/.json"
 	url := fmt.Sprintf(apiPostURLf, postID)
@@ -79,6 +86,17 @@ func fetchPost(postID string) (*http.Response, error) {
 		return resp, nil
 	}
 	return nil, ErrBadResponse
+}
+
+func ResolvePostURLFromShareID(subreddit, shareID string) (string, error) {
+	const shareURLf string = "https://www.reddit.com/r/%s/s/%s"
+	url := fmt.Sprintf(shareURLf, subreddit, shareID)
+	resp, err := defaultClient.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Request.URL.String(), nil
 }
 
 // PostByID fetches the post with the corresponding ID
