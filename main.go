@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	pattern              string = `(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/comments\/(?P<%s>.+?)\/[^\s\n]*\s?(?P<%s>.*)`
+	pattern              string = `(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/(?P<%s>comments|s)\/(?P<%s>[^\s\n\/]+)\/?[^\s\n]*\s?(?P<%s>.*)`
 	captureNamePrefixMsg string = "prefix"
 	captureNameSubreddit string = "subreddit"
+	captureNameLinkType  string = "linkType"
 	captureNamePostID    string = "postID"
 	captureNameSuffixMsg string = "suffix"
 
@@ -50,6 +51,7 @@ func init() {
 		pattern,
 		captureNamePrefixMsg,
 		captureNameSubreddit,
+		captureNameLinkType,
 		captureNamePostID,
 		captureNameSuffixMsg,
 	)
