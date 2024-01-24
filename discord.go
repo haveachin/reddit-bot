@@ -34,7 +34,7 @@ type redditBot struct {
 func newRedditBot() redditBot {
 	return redditBot{
 		redditPostPattern: regex.MustCompile(
-			`(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/(?P<%s>comments|s)\/(?P<%s>[^\s\n\/]+)\/?[^\s\n]*\s?(?P<%s>.*)`,
+			`(?s)(?P<%s>.*)https:\/\/(?:www.|new.)?reddit.com\/r\/(?P<%s>.+)\/(?P<%s>comments|s)\/(?P<%s>[^\s\n\/]+)\/?[^\s\n]*\s?(?P<%s>.*)`,
 			captureNamePrefixMsg,
 			captureNameSubreddit,
 			captureNameLinkType,
