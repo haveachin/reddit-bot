@@ -7,25 +7,16 @@ import (
 	"syscall"
 
 	discord "github.com/bwmarrin/discordgo"
-	"github.com/haveachin/reddit-bot/regex"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 const (
-	pattern              string = `(?s)(?P<%s>.*)https:\/\/(?:www.)?reddit.com\/r\/(?P<%s>.+)\/(?P<%s>comments|s)\/(?P<%s>[^\s\n\/]+)\/?[^\s\n]*\s?(?P<%s>.*)`
-	captureNamePrefixMsg string = "prefix"
-	captureNameSubreddit string = "subreddit"
-	captureNameLinkType  string = "linkType"
-	captureNamePostID    string = "postID"
-	captureNameSuffixMsg string = "suffix"
-
 	envVarPrefix = "REDDITBOT_"
 )
 
 var (
-	redditPostPattern regex.Pattern
-	discordToken      string
+	discordToken string
 )
 
 func envVarStringVar(p *string, name, value string) {
@@ -41,61 +32,53 @@ func initEnvVars() {
 	envVarStringVar(&discordToken, "DISCORD_TOKEN", discordToken)
 }
 
-func init() {
-	initEnvVars()
-
+func initLogger() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
-
-	redditPostPattern = regex.MustCompile(
-		pattern,
-		captureNamePrefixMsg,
-		captureNameSubreddit,
-		captureNameLinkType,
-		captureNamePostID,
-		captureNameSuffixMsg,
-	)
-
-	if err := os.Mkdir("logs", 0644); err != nil {
-		if os.IsNotExist(err) {
-			log.Error().Err(err).Msg("Could not create logs folder")
-		}
-	}
-
-	discordToken = fmt.Sprintf("Bot %s", discordToken)
 }
 
 func main() {
+	initEnvVars()
+	initLogger()
+
+	if err := run(); err != nil {
+		log.Error().
+			Err(err).
+			Msg("Failed to run")
+	}
+}
+
+func run() error {
 	log.Info().Msg("Connecting to Discord")
-	discordSession, err := discord.New(discordToken)
+	discordSession, err := discord.New("Bot " + discordToken)
 	if err != nil {
-		log.Error().Err(err).Msg("Could not create session")
-		return
+		return fmt.Errorf("create session: %w", err)
 	}
 	defer discordSession.Close()
 
-	discordSession.AddHandler(onRedditLinkMessage)
+	rb := newRedditBot()
+
+	rmReddidLinkMsg := discordSession.AddHandler(rb.onRedditLinkMessage)
+	defer rmReddidLinkMsg()
 
 	if err := discordSession.Open(); err != nil {
-		log.Error().Err(err).Msg("Could not connect to discord")
-		return
-	}
-
-	for _, g := range discordSession.State.Guilds {
-		g, err := discordSession.Guild(g.ID)
-		if err != nil {
-			log.Error().Err(err)
-			continue
-		}
-		log.Print(g.Name)
+		return fmt.Errorf("connect to discord: %w", err)
 	}
 
 	status := fmt.Sprintf("Reddit for %d Servers", len(discordSession.State.Guilds))
-	discordSession.UpdateWatchStatus(0, status)
+	if err := discordSession.UpdateWatchStatus(0, status); err != nil {
+		log.Warn().
+			Err(err).
+			Msg("Failed to update status")
+	}
 
-	log.Info().Msg("Bot is online")
+	log.Info().
+		Msg("Bot is online")
 
+	// Wait for exit signal form OS
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
+
+	return nil
 }

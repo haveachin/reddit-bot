@@ -13,6 +13,7 @@ const (
 	PostTypeVideoHosted PostType = "hosted:video"
 	PostTypeVideoEmbed  PostType = "rich:video"
 	PostTypeSelf        PostType = "self"
+	PostTypeRedGif      PostType = "redgifs.com"
 )
 
 // Post is a very simplified variation of a JSON response given from the reddit api
@@ -48,7 +49,7 @@ type postJSON []struct {
 				Subreddit string `json:"subreddit"`
 				Author    string `json:"author"`
 				Permalink string `json:"permalink"`
-				ImageURL  string `json:"url"`
+				URL       string `json:"url"`
 				PostHint  string `json:"post_hint"`
 				IsVideo   bool   `json:"is_video"`
 				Media     struct {
@@ -122,9 +123,10 @@ func PostByID(postID string) (Post, error) {
 	}
 
 	data := postJSON[0].Data.Children[0].Data
-	isImage := data.PostHint == string(PostTypeImage)
+	isVideo := data.IsVideo || data.Media.Type == string(PostTypeRedGif)
 	isEmbed := data.PostHint == string(PostTypeVideoEmbed) // TODO: change this
-	isImage = isImage || (!isEmbed && !data.IsVideo && data.ImageURL != "")
+	isImage := data.PostHint == string(PostTypeImage)
+	isImage = isImage || (!isEmbed && !isVideo && data.URL != "")
 	return Post{
 		ID:        postID,
 		Title:     data.Title,
@@ -132,9 +134,9 @@ func PostByID(postID string) (Post, error) {
 		Subreddit: data.Subreddit,
 		Author:    data.Author,
 		Permalink: data.Permalink,
-		ImageURL:  data.ImageURL,
+		ImageURL:  data.URL,
 		IsImage:   isImage,
-		IsVideo:   data.IsVideo,
+		IsVideo:   isVideo,
 		IsEmbed:   isEmbed,
 		Embed: Embed{
 			HTML: data.Media.Oembed.HTML,
