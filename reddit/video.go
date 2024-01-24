@@ -22,7 +22,7 @@ func (p Post) DownloadVideo() (*os.File, error) {
 func downloadVideo(filepath string, url string) error {
 	cmd := exec.Command("yt-dlp",
 		"--no-continue",
-		"--postprocessor-args", "-c:v libx264 -c:a aac -crf 24 -preset faster -tune film",
+		"--postprocessor-args", "-c:v libx264 -c:a aac -crf 32 -preset faster",
 		"-o", filepath,
 		url,
 	)

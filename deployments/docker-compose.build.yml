@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  reddit-bot:
+    image: reddit-bot:latest
+    build:
+      context: ..
+      dockerfile: build/package/Dockerfile
+    container_name: reddit-bot
+    restart: always
+    volumes:
+      - "./data/logs:/reddit-bot/logs"
+    environment:
+      - REDDITBOT_DISCORD_TOKEN=${DISCORD_TOKEN}
