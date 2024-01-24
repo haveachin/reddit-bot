@@ -14,21 +14,23 @@ const (
 	PostTypeVideoEmbed  PostType = "rich:video"
 	PostTypeSelf        PostType = "self"
 	PostTypeRedGif      PostType = "redgifs.com"
+	PostTypeRedGifV3    PostType = "v3.redgifs.com"
 )
 
 // Post is a very simplified variation of a JSON response given from the reddit api
 type Post struct {
-	ID        string
-	Title     string
-	Text      string
-	Subreddit string
-	Author    string
-	Permalink string
-	ImageURL  string
-	IsImage   bool
-	IsVideo   bool
-	IsEmbed   bool
-	Embed     Embed
+	ID         string
+	Title      string
+	Text       string
+	Subreddit  string
+	Author     string
+	Permalink  string
+	MediaURL   string
+	IsImage    bool
+	IsVideo    bool
+	IsEmbed    bool
+	WasRemoved bool
+	Embed      Embed
 }
 
 func (p Post) URL() string {
@@ -44,15 +46,16 @@ type postJSON []struct {
 	Data struct {
 		Children []struct {
 			Data struct {
-				Title     string `json:"title"`
-				Text      string `json:"selftext"`
-				Subreddit string `json:"subreddit"`
-				Author    string `json:"author"`
-				Permalink string `json:"permalink"`
-				URL       string `json:"url"`
-				PostHint  string `json:"post_hint"`
-				IsVideo   bool   `json:"is_video"`
-				Media     struct {
+				Title             string `json:"title"`
+				Text              string `json:"selftext"`
+				Subreddit         string `json:"subreddit"`
+				Author            string `json:"author"`
+				Permalink         string `json:"permalink"`
+				URL               string `json:"url"`
+				PostHint          string `json:"post_hint"`
+				IsVideo           bool   `json:"is_video"`
+				RemovedByCategory string `json:"removed_by_category"`
+				Media             struct {
 					Type   string `json:"type"`
 					Oembed struct {
 						HTML string `json:"html"`
@@ -123,21 +126,25 @@ func PostByID(postID string) (Post, error) {
 	}
 
 	data := postJSON[0].Data.Children[0].Data
-	isVideo := data.IsVideo || data.Media.Type == string(PostTypeRedGif)
+	isVideo := data.IsVideo ||
+		data.Media.Type == string(PostTypeRedGif) ||
+		data.Media.Type == string(PostTypeRedGifV3)
 	isEmbed := data.PostHint == string(PostTypeVideoEmbed) // TODO: change this
 	isImage := data.PostHint == string(PostTypeImage)
 	isImage = isImage || (!isEmbed && !isVideo && data.URL != "")
+	wasRemoved := data.RemovedByCategory != ""
 	return Post{
-		ID:        postID,
-		Title:     data.Title,
-		Text:      data.Text,
-		Subreddit: data.Subreddit,
-		Author:    data.Author,
-		Permalink: data.Permalink,
-		ImageURL:  data.URL,
-		IsImage:   isImage,
-		IsVideo:   isVideo,
-		IsEmbed:   isEmbed,
+		ID:         postID,
+		Title:      data.Title,
+		Text:       data.Text,
+		Subreddit:  data.Subreddit,
+		Author:     data.Author,
+		Permalink:  data.Permalink,
+		MediaURL:   data.URL,
+		IsImage:    isImage,
+		IsVideo:    isVideo,
+		IsEmbed:    isEmbed,
+		WasRemoved: wasRemoved,
 		Embed: Embed{
 			HTML: data.Media.Oembed.HTML,
 			Type: data.Media.Type,

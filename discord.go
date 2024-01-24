@@ -18,6 +18,7 @@ const (
 	emojiIDErrorReddit string = "⚠️"
 	emojiIDErrorFFMPEG string = "😵"
 	emojiIDTooBig      string = "\U0001F975"
+	emojiIDWasRemoved  string = "❌"
 
 	captureNamePrefixMsg string = "prefix"
 	captureNameSubreddit string = "subreddit"
@@ -124,6 +125,11 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 		},
 	}
 
+	if post.WasRemoved {
+		_ = s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWasRemoved)
+		return
+	}
+
 	if post.IsVideo {
 		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWorkingOnIt)
 		logger.Info().Msg("Processing post video")
@@ -147,7 +153,7 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 	} else if post.IsImage {
 		logger.Info().Msg("Embedding image url")
 		msg.Embed.Image = &discord.MessageEmbedImage{
-			URL: post.ImageURL,
+			URL: post.MediaURL,
 		}
 	} else if post.IsEmbed {
 		url, err := rb.embedder.Embed(&post)

@@ -19,3 +19,4 @@ config.json
 *.mp4
 /.idea
 .vscode/
+__debug_bin*
