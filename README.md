@@ -15,3 +15,6 @@ A discord bot that replaces image/gif, text, and video posts with a rich preview
 
 ## Build
 
+Requires Go 1.15+
+
+`make all` or `CGO_ENABLED=0 go build -ldflags "-s -w" ./cmd/reddit-bot`
