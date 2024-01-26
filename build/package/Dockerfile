@@ -3,7 +3,7 @@ LABEL stage=intermediate
 COPY . /reddit-bot
 WORKDIR /reddit-bot
 ENV GO111MODULE=on
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o reddit-bot .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o reddit-bot ./cmd/reddit-bot
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates ffmpeg yt-dlp
