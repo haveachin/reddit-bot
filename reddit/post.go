@@ -19,21 +19,22 @@ const (
 
 // Post is a very simplified variation of a JSON response given from the reddit api
 type Post struct {
-	ID         string
-	Title      string
-	Text       string
-	Subreddit  string
-	Author     string
-	Permalink  string
-	MediaURL   string
-	IsImage    bool
-	IsVideo    bool
-	IsEmbed    bool
-	WasRemoved bool
-	Embed      Embed
+	ID                 string
+	Title              string
+	Text               string
+	Subreddit          string
+	Author             string
+	Permalink          string
+	URL                string
+	IsImage            bool
+	IsVideo            bool
+	IsEmbed            bool
+	WasRemoved         bool
+	Embed              Embed
+	PostProcessingArgs []string
 }
 
-func (p Post) URL() string {
+func (p Post) ShortURL() string {
 	return "https://www.reddit.com/" + p.ID
 }
 
@@ -132,7 +133,7 @@ func PostByID(postID string) (Post, error) {
 	isEmbed := data.PostHint == string(PostTypeVideoEmbed) // TODO: change this
 	isImage := data.PostHint == string(PostTypeImage)
 	isImage = isImage || (!isEmbed && !isVideo && data.URL != "")
-	wasRemoved := data.RemovedByCategory != ""
+	wasRemoved := data.RemovedByCategory != "" && data.URL == ""
 	return Post{
 		ID:         postID,
 		Title:      data.Title,
@@ -140,7 +141,7 @@ func PostByID(postID string) (Post, error) {
 		Subreddit:  data.Subreddit,
 		Author:     data.Author,
 		Permalink:  data.Permalink,
-		MediaURL:   data.URL,
+		URL:        data.URL,
 		IsImage:    isImage,
 		IsVideo:    isVideo,
 		IsEmbed:    isEmbed,

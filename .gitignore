@@ -14,9 +14,11 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-config.json
-/logs
-*.mp4
-/.idea
+# IDEs
+.idea/
 .vscode/
+
+# Debug
+*.mp4
 __debug_bin*
+.dev/

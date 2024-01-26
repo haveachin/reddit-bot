@@ -1,0 +1,5 @@
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates ffmpeg yt-dlp
+COPY reddit-bot /usr/bin/reddit-bot
+RUN mkdir /etc/reddit-bot
+ENTRYPOINT [ "/usr/bin/reddit-bot", "-c", "/etc/reddit-bot/config.yml" ]

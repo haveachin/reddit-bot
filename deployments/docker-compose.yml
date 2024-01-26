@@ -4,8 +4,9 @@ services:
   reddit-bot:
     image: reddit-bot:${IMAGE_TAG}
     container_name: reddit-bot
-    restart: unless-stopped
+    restart: always
     volumes:
-      - "./data/logs:/reddit-bot/logs"
+      - ./data/reddit-bot/etc:/etc/reddit-bot
     environment:
       - REDDITBOT_DISCORD_TOKEN=${DISCORD_TOKEN}
+      - REDDITBOT_LOG_LEVEL=info
