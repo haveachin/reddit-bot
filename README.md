@@ -32,8 +32,10 @@ The Reddit Bot uses yt-dlp for downloading and processing videos. This allows yo
 ```yml
 postProcessingArgs:
   - >-
-    Merger+ffmpeg_o:
+    Merger+ffmpeg_i1:
     -vaapi_device /dev/dri/renderD128
+  - >-
+    Merger+ffmpeg_o:
     -vcodec h264_vaapi
     -vf 'format=nv12,hwupload,scale_vaapi=iw/2:ih/2'
     -qp 28
