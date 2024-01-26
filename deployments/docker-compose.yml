@@ -9,3 +9,4 @@ services:
       - ./data/reddit-bot/etc:/etc/reddit-bot
     environment:
       - REDDITBOT_DISCORD_TOKEN=${DISCORD_TOKEN}
+      - REDDITBOT_LOG_LEVEL=info

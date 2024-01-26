@@ -41,7 +41,8 @@ func (p Post) downloadAndProcessVideo(filepath string, url string) error {
 		args = append(args, "-v")
 	}
 
-	cmd.Args = append(args, url)
+	args = append(args, url)
+	cmd.Args = args
 
 	log.Debug().
 		Str("cmd", cmd.String()).

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	envVarPrefix = "REDDITBOT_"
+	envVarPrefix = "REDDITBOT"
 )
 
 var (

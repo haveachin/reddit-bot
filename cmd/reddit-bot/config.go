@@ -28,7 +28,7 @@ func createConfigIfNotExist() error {
 
 func createDefaultConfigFile() error {
 	bb := configs.DefaultConfig
-	return os.WriteFile(configPath, bb, 0664)
+	return os.WriteFile(configPath, bb, 0600)
 }
 
 func readAndParseConfig() (config, error) {
