@@ -41,6 +41,23 @@ postProcessingArgs:
     -c:a libopus
     -b:a 64k
 ```
+
+When using Docker Compose you need to add this:
+
+```docker-compose
+version: '3'
+
+services:
+  reddit-bot:
+    ...
+    group_add:
+      # Change this to match your "render" host group id.
+      # Use: getent group render | cut -d: -f3
+      - "989"
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+```
+
 #### Nvidia Hardware Accelleration with CUDA
 
 ```yml
@@ -59,6 +76,4 @@ postProcessingArgs:
     -c:a libopus
     -b:a 64k
 ```
-yt-dlp -o out.mp4 -v --ppa "ffmpeg_i:-hwaccel cuda -hwaccel_output_format cuda -vf 'hwupload,scale_cuda=iw/2:ih/2' -c:v h264_nvenc -rc constqp -qp 28 -fpsmax 24 -c:a libopus -b:a 64k" https://www.reddit.com/1abbkcx
-
-Hey, I'm trying t
+Docker setup not done yet. Contributions are welcome.

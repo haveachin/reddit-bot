@@ -86,17 +86,20 @@ func initLogger() {
 		level = zerolog.ErrorLevel
 	default:
 		log.Warn().
-			Str("logLevel", logLevel).
-			Msg("invalid log level; defaulting to info")
+			Str("level", logLevel).
+			Msg("Invalid log level; defaulting to info")
 	}
 
 	zerolog.SetGlobalLevel(level)
+	log.Info().
+		Str("level", logLevel).
+		Msg("Log level set")
 }
 
 func main() {
-	initLogger()
 	initEnvVars()
 	initFlags()
+	initLogger()
 	initConfig()
 
 	if err := run(); err != nil {

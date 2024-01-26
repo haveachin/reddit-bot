@@ -1,3 +1,5 @@
+.PHONY: build
+
 test:
 	go test -race -timeout 10s ./...
 
@@ -7,4 +9,4 @@ build:
 all: test build
 
 run: build
-	./out/reddit-bot -w .dev/reddit-bot
+	./out/reddit-bot -c .dev/reddit-bot/config.yml
