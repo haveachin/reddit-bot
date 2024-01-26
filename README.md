@@ -36,7 +36,6 @@ postProcessingArgs:
     -vaapi_device /dev/dri/renderD128
   - >-
     Merger+ffmpeg_o:
-    -vaapi_device /dev/dri/renderD128
     -vcodec h264_vaapi
     -vf 'format=nv12,hwupload,scale_vaapi=iw/2:ih/2'
     -qp 28
