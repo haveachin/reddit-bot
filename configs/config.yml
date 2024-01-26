@@ -1,0 +1,20 @@
+# Go to https://discord.com/developers/applications
+# Click or create your applicaiton. Then go to the "Bot" tab and click "Reset Token"
+# Insert this token here.
+#
+discordToken: ""
+
+# This are the ffmpeg args that are used as post processing args for yt-dlp.
+# By default videos are transcoded to H.264 24 FPS with Opus 64kbps audio.
+# The video is also downscaled to half the resolution and lossy compressed.
+#
+postProcessingArgs: 
+  - >-
+    Merger+ffmpeg_o:
+    -vf 'format=nv12,scale=iw/2:ih/2'
+    -c:v libx264 
+    -crf 28
+    -fpsmax 24
+    -c:a libopus
+    -b:a 64k
+    -preset faster

@@ -28,11 +28,12 @@ const (
 )
 
 type redditBot struct {
-	redditPostPattern regex.Pattern
-	embedder          embed.Embedder
+	redditPostPattern  regex.Pattern
+	embedder           embed.Embedder
+	postProcessingArgs []string
 }
 
-func newRedditBot() redditBot {
+func newRedditBot(ppas []string) redditBot {
 	return redditBot{
 		redditPostPattern: regex.MustCompile(
 			`(?s)(?P<%s>.*)https:\/\/(?:www.|new.)?reddit.com\/r\/(?P<%s>.+)\/(?P<%s>comments|s)\/(?P<%s>[^\s\n\/]+)\/?[^\s\n]*\s?(?P<%s>.*)`,
@@ -42,7 +43,8 @@ func newRedditBot() redditBot {
 			captureNamePostID,
 			captureNameSuffixMsg,
 		),
-		embedder: embed.NewEmbedder(),
+		embedder:           embed.NewEmbedder(),
+		postProcessingArgs: ppas,
 	}
 }
 
@@ -133,9 +135,12 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 	if post.IsVideo {
 		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWorkingOnIt)
 		logger.Info().Msg("Processing post video")
+		post.PostProcessingArgs = rb.postProcessingArgs
 		file, err := post.DownloadVideo()
 		if err != nil && file == nil {
-			logger.Error().Err(err).Msg("ffmpeg error")
+			logger.Error().
+				Err(err).
+				Msg("ffmpeg error")
 			_, _ = s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", m.Reference())
 			_ = s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorFFMPEG)
 			return
@@ -153,14 +158,18 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 	} else if post.IsImage {
 		logger.Info().Msg("Embedding image url")
 		msg.Embed.Image = &discord.MessageEmbedImage{
-			URL: post.MediaURL,
+			URL: post.URL,
 		}
 	} else if post.IsEmbed {
 		url, err := rb.embedder.Embed(&post)
 		if err == embed.ErrorNotImplemented {
-			logger.Warn().Err(err).Msg("embedded website (source) is not yet implemented")
+			logger.Warn().
+				Err(err).
+				Msg("embedded website (source) is not yet implemented")
 		} else if err != nil {
-			logger.Error().Err(err).Msg("something went wrong while analyzing embedded content")
+			logger.Error().
+				Err(err).
+				Msg("something went wrong while analyzing embedded content")
 		}
 		_, _ = s.ChannelMessageSend(m.ChannelID, url)
 		logger.Info().Msg("Sending embedded YouTube video")
@@ -168,7 +177,9 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 
 	_, err = s.ChannelMessageSendComplex(m.ChannelID, msg)
 	if err != nil {
-		logger.Error().Err(err).Msg("Could not send embed")
+		logger.Error().
+			Err(err).
+			Msg("Could not send embed")
 		_, _ = s.ChannelMessageSendReply(m.ChannelID, "The video is too big", m.Reference())
 		_ = s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDTooBig)
 		return

@@ -1,0 +1,12 @@
+[Unit]
+Description=A Discord Bot that replaces links with rich previews.
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/reddit-bot -c /etc/reddit-bot/config.yml
+Type=simple
+Restart=always
+
+[Install]
+WantedBy=default.target
+RequiredBy=network.target
