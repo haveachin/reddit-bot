@@ -1,5 +1,5 @@
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates ffmpeg yt-dlp
+RUN apk --no-cache add ca-certificates ffmpeg yt-dlp mesa-dri-gallium mesa-va-gallium intel-media-driver libva-intel-driver linux-firmware-i915
 COPY reddit-bot /usr/bin/reddit-bot
 RUN mkdir /etc/reddit-bot
 ENTRYPOINT [ "/usr/bin/reddit-bot", "-c", "/etc/reddit-bot/config.yml" ]
