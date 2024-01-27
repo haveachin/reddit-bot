@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"github.com/haveachin/reddit-bot/embed"
 	"github.com/haveachin/reddit-bot/reddit"
 	"github.com/haveachin/reddit-bot/regex"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -36,6 +38,7 @@ type redditBot struct {
 func newRedditBot(ppas []string) redditBot {
 	return redditBot{
 		redditPostPattern: regex.MustCompile(
+			//nolint:lll
 			`(?s)(?P<%s>.*)https:\/\/(?:www.|new.)?reddit.com\/r\/(?P<%s>.+)\/(?P<%s>comments|s)\/(?P<%s>[^\s\n\/]+)\/?[^\s\n]*\s?(?P<%s>.*)`,
 			captureNamePrefixMsg,
 			captureNameSubreddit,
@@ -116,7 +119,8 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 			Color: colorReddit,
 			URL:   "https://reddit.com" + post.Permalink,
 			Description: func() string {
-				if len(post.Text) > 1000 {
+				const maxTextLen = 1000
+				if len(post.Text) > maxTextLen {
 					return html.UnescapeString(fmt.Sprintf("%.1000s...", post.Text))
 				}
 				return post.Text
@@ -127,13 +131,23 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 		},
 	}
 
+	rb.handlePost(s, m, logger, post, msg)
+}
+
+func (rb redditBot) handlePost(
+	s *discord.Session,
+	m *discord.MessageCreate,
+	logger zerolog.Logger,
+	post reddit.Post,
+	msg *discord.MessageSend,
+) {
 	if post.WasRemoved {
 		_ = s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWasRemoved)
 		return
 	}
 
 	if post.IsVideo {
-		s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWorkingOnIt)
+		_ = s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDWorkingOnIt)
 		logger.Info().Msg("Processing post video")
 		post.PostProcessingArgs = rb.postProcessingArgs
 		file, err := post.DownloadVideo()
@@ -141,7 +155,11 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 			logger.Error().
 				Err(err).
 				Msg("ffmpeg error")
-			_, _ = s.ChannelMessageSendReply(m.ChannelID, "Oh, no! Something went wrong while processing your video", m.Reference())
+			_, _ = s.ChannelMessageSendReply(
+				m.ChannelID,
+				"Oh, no! Something went wrong while processing your video",
+				m.Reference(),
+			)
 			_ = s.MessageReactionAdd(m.ChannelID, m.ID, emojiIDErrorFFMPEG)
 			return
 		}
@@ -152,7 +170,7 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 
 		logger.Info().Msg("Embedding video file")
 		msg.File = &discord.File{
-			Name:   postID + ".mp4",
+			Name:   post.ID + ".mp4",
 			Reader: file,
 		}
 	} else if post.IsImage {
@@ -162,7 +180,7 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 		}
 	} else if post.IsEmbed {
 		url, err := rb.embedder.Embed(&post)
-		if err == embed.ErrorNotImplemented {
+		if errors.Is(err, embed.ErrNotImplemented) {
 			logger.Warn().
 				Err(err).
 				Msg("embedded website (source) is not yet implemented")
@@ -175,8 +193,7 @@ func (rb redditBot) onRedditLinkMessage(s *discord.Session, m *discord.MessageCr
 		logger.Info().Msg("Sending embedded YouTube video")
 	}
 
-	_, err = s.ChannelMessageSendComplex(m.ChannelID, msg)
-	if err != nil {
+	if _, err := s.ChannelMessageSendComplex(m.ChannelID, msg); err != nil {
 		logger.Error().
 			Err(err).
 			Msg("Could not send embed")

@@ -9,15 +9,20 @@ import (
 type PostType string
 
 const (
-	PostTypeImage       PostType = "image"
+	// PostTypeImage means an image that is hosted on Reddit.
+	PostTypeImage PostType = "image"
+	// PostTypeVideoHosted is a video that is hosted on Reddit.
 	PostTypeVideoHosted PostType = "hosted:video"
-	PostTypeVideoEmbed  PostType = "rich:video"
-	PostTypeSelf        PostType = "self"
-	PostTypeRedGif      PostType = "redgifs.com"
-	PostTypeRedGifV3    PostType = "v3.redgifs.com"
+	// PostTypeVideoEmbed is a video that is hosted on an external platform.
+	// Normally these videos are embedded via an iFrame.
+	PostTypeVideoEmbed PostType = "rich:video"
+	PostTypeSelf       PostType = "self"
+
+	PostTypeRedGif   PostType = "redgifs.com"
+	PostTypeRedGifV3 PostType = "v3.redgifs.com"
 )
 
-// Post is a very simplified variation of a JSON response given from the reddit api
+// Post is a very simplified variation of a JSON response given from the reddit api.
 type Post struct {
 	ID                 string
 	Title              string
@@ -43,7 +48,7 @@ type Embed struct {
 	Type string
 } // html embedded media
 
-type postJSON []struct {
+type postDTO []struct {
 	Data struct {
 		Children []struct {
 			Data struct {
@@ -74,21 +79,28 @@ const (
 	CommentsLinkType = LinkType("comments")
 )
 
-func fetchPost(postID string) (*http.Response, error) {
+func fetchPost(postID string) (postDTO, error) {
 	const apiPostURLf string = "https://www.reddit.com/%s/.json"
 	url := fmt.Sprintf(apiPostURLf, postID)
 
 	for i := 3; i > 0; i-- {
 		resp, err := defaultClient.Get(url)
 		if err != nil {
-			return nil, err
+			return postDTO{}, err
 		}
 
 		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
 			continue
 		}
 
-		return resp, nil
+		dto := postDTO{}
+		if err := json.NewDecoder(resp.Body).Decode(&dto); err != nil {
+			return postDTO{}, err
+		}
+		resp.Body.Close()
+
+		return dto, nil
 	}
 	return nil, ErrBadResponse
 }
@@ -100,39 +112,34 @@ func ResolvePostURLFromShareID(subreddit, shareID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	resp.Body.Close()
 
 	return resp.Request.URL.String(), nil
 }
 
-// PostByID fetches the post with the corresponding ID
-// A post ID is normally six characters long
+// PostByID fetches the post with the corresponding ID.
+// A post ID is normally six characters long.
 func PostByID(postID string) (Post, error) {
-	resp, err := fetchPost(postID)
+	dto, err := fetchPost(postID)
 	if err != nil {
 		return Post{}, err
 	}
 
-	postJSON := postJSON{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&postJSON); err != nil {
-		return Post{}, err
-	}
-
-	if len(postJSON) <= 0 {
+	if len(dto) == 0 {
 		return Post{}, ErrBadResponse
 	}
 
-	if len(postJSON[0].Data.Children) <= 0 {
+	if len(dto[0].Data.Children) == 0 {
 		return Post{}, ErrBadResponse
 	}
 
-	data := postJSON[0].Data.Children[0].Data
+	data := dto[0].Data.Children[0].Data
 	isVideo := data.IsVideo ||
 		data.Media.Type == string(PostTypeRedGif) ||
 		data.Media.Type == string(PostTypeRedGifV3)
 	isEmbed := data.PostHint == string(PostTypeVideoEmbed) // TODO: change this
-	isImage := data.PostHint == string(PostTypeImage)
-	isImage = isImage || (!isEmbed && !isVideo && data.URL != "")
+	isImage := data.PostHint == string(PostTypeImage) ||
+		(!isEmbed && !isVideo && data.URL != "")
 	wasRemoved := data.RemovedByCategory != "" && data.URL == ""
 	return Post{
 		ID:         postID,

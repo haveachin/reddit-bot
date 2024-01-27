@@ -5,13 +5,11 @@ import (
 	"time"
 )
 
-var defaultClient http.Client
+const cientTimeout = time.Second * 10
 
-func init() {
-	defaultClient = http.Client{
-		Transport: &headerTransport{},
-		Timeout:   time.Second * 5,
-	}
+var defaultClient = http.Client{
+	Transport: &headerTransport{},
+	Timeout:   cientTimeout,
 }
 
 type headerTransport struct{}

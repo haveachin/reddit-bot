@@ -10,7 +10,7 @@ type matcher struct {
 	urlTmpl string
 }
 
-// newMatcher returns a matcher for the provided source
+// newMatcher returns a matcher for the provided source.
 func newMatcher(s Source) (matcher, error) {
 	m := matcher{s: s}
 
@@ -22,13 +22,13 @@ func newMatcher(s Source) (matcher, error) {
 		m.p = pGfycat
 		m.urlTmpl = urlGfycat
 	default:
-		return m, ErrorNotImplemented
+		return m, ErrNotImplemented
 	}
 
 	return m, nil
 }
 
-// fetchID gets the ID of the embedded video
+// fetchID gets the ID of the embedded video.
 func (mchr matcher) fetchID(s string) (string, error) {
 	// match against html and fetch video id
 	m, err := mchr.p.FindStringSubmatch(s)
